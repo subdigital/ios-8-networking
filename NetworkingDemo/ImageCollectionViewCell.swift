@@ -9,5 +9,9 @@
 import UIKit
 
 class ImageCollectionViewCell: UICollectionViewCell {
+    @IBOutlet var imageView: UIImageView!
     
+    override func prepareForReuse() {
+        imageView.image = nil
+    }
 }

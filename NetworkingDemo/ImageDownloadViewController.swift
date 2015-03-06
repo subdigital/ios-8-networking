@@ -8,28 +8,49 @@
 
 import UIKit
 
-class ImageDownloadViewController: UIViewController {
+class ImageDownloadViewController: UIViewController, NSURLSessionDownloadDelegate {
+    
+    @IBOutlet weak var imageView: UIImageView!
+    let imageUrl = NSURL(string: "http://f.cl.ly/items/1E2L3I1F3C1p2s3x180C/Screenshot%202014-11-09%2011.00.37%20(1).png")!
+    var task: NSURLSessionDownloadTask?
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        // Do any additional setup after loading the view.
+        self.progressView.progress = 0
     }
 
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
+    @IBAction func downloadImageTapped(sender: AnyObject) {
+        imageView.image = nil
+        task?.cancel()
+        
+        UIApplication.sharedApplication().networkActivityIndicatorVisible = true
+        let session = NSURLSession(configuration: NSURLSessionConfiguration.defaultSessionConfiguration(), delegate:self, delegateQueue: NSOperationQueue.mainQueue())
+        task = session.downloadTaskWithURL(imageUrl)
+        
+        task!.resume()
     }
     
-
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-        // Get the new view controller using segue.destinationViewController.
-        // Pass the selected object to the new view controller.
+    @IBOutlet weak var progressView: UIProgressView!
+    
+    
+    func URLSession(session: NSURLSession, downloadTask: NSURLSessionDownloadTask, didFinishDownloadingToURL location: NSURL) {
+        let data = NSData(contentsOfURL: location)
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+            let image = UIImage(data: data!)
+            dispatch_async(dispatch_get_main_queue()) {
+                self.imageView.image = image
+            }
+        }
     }
-    */
-
+    
+    func URLSession(session: NSURLSession, task: NSURLSessionTask, didCompleteWithError error: NSError?) {
+        UIApplication.sharedApplication().networkActivityIndicatorVisible = false
+        if error != nil {
+            println("Error: \(error)")
+        }
+    }
+    
+    func URLSession(session: NSURLSession, downloadTask: NSURLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
+        self.progressView.progress = Float(totalBytesWritten) / Float(totalBytesExpectedToWrite)
+    }
 }
